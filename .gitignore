@@ -94,3 +94,5 @@ fabric.properties
 .env
 
 .idea
+
+*.iml
