@@ -1,6 +1,6 @@
-# Yet Another Discord WebHook Planner
+# 📅 Yet Another Discord WebHook Planner
 
-## What is this?
+## What is this ❓
 
 This is a simple Discord WebHook Planner, which allows you to fetch your events from a .ics online and display them in a Discord through a webhook.
 
@@ -13,15 +13,15 @@ Else, it doesn't send a message.
 
 It uses a `.env` file which contains your personal data, see .env.example:
 
-## How to use it?
+## 🚀 Getting started
 
-### Get a good .ics
+### Get a correct .ics !
 
 This little script is made to work with specifics .ics file; it assumes that your relevant events: 
 - are in the `VEVENT` section of the file, and that the `SUMMARY` field contains the name of the event.
 - have the property `CATEGORIES` set to `Cours` if it is a course, or `Important` if it is an important event.
 
-### Get Go or see releases
+### Get Go or see [releases](https://github.com/remi-espie/yet-another-discord-webhook-planner/releases)
 
 First import the dependencies with `go get -d ./...`.
 
@@ -37,3 +37,16 @@ Finally just run `go run main.go` and it will fetch the set ics and sent the dat
 You could also build it with `go build main.go` and run it with `./main`.
 
 #### The only release available was built for Linux x86_64.
+
+## 📝 License
+
+This project is under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💻 Dependencies for nerds
+
+Developed with GO 19
+
+And the following dependencies:
+- [goland-ical](https://github.com/arran4/golang-ical)
+- [discordwebhook](https://github.com/gtuk/discordwebhook)
+- [godotenv](https://github.com/joho/godotenv)
