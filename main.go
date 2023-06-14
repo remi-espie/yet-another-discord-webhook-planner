@@ -23,13 +23,91 @@ func main() {
 	}
 
 	// URL of the .ics file in .env
-	url := os.Getenv("ICS_URL")
+	icsUrl := os.Getenv("ICS_URL")
 
 	// webhook URL in .env
 	webhook := os.Getenv("WEBHOOK_URL")
 
-	// Fetch the .ics file
-	resp, err := http.Get(url)
+	//set the username and avatar of the bot
+	username := "📆 Planning Bot"
+	avatar := os.Getenv("AVATAR_URL")
+
+	// set the time location to Europe/Paris
+	location, err := time.LoadLocation("Europe/Paris")
+
+	today := time.Now().In(location)
+	tomorrow := today.AddDate(0, 0, 1)
+
+	var todayCourse []*ics.VEvent
+	var todayEvent []*ics.VEvent
+
+	var tomorrowCourse []*ics.VEvent
+	var tomorrowEvent []*ics.VEvent
+
+	// Fetch the calendar
+	cal := getCal(icsUrl)
+
+	// store the events of today and tomorrow
+	for _, event := range cal.Events() {
+		// Print the event as JSON
+		at, err := event.GetStartAt()
+		if err != nil {
+			return
+		}
+
+		if DateEqual(at, today) {
+			category := event.GetProperty("CATEGORIES").Value
+			if category == "Cours" {
+				todayCourse = append(todayCourse, event)
+			}
+
+			if category == "Important" {
+				todayEvent = append(todayEvent, event)
+			}
+		}
+
+		if DateEqual(at, tomorrow) {
+			category := event.GetProperty("CATEGORIES").Value
+			if category == "Cours" {
+				tomorrowCourse = append(tomorrowCourse, event)
+			}
+
+			if category == "Important" {
+				tomorrowEvent = append(tomorrowEvent, event)
+			}
+		}
+
+	}
+
+	if len(todayCourse) > 0 || len(todayEvent) > 0 {
+		content1 := "---\n"
+		content1 += getOrderedPlanning(todayCourse, todayEvent, "today")
+		content1 += "\n\n" + getWeather()
+		sendMessage(webhook, username, avatar, content1)
+	}
+
+	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
+		content2 := "---\n"
+		content2 += getOrderedPlanning(tomorrowCourse, tomorrowEvent, "tomorrow")
+		sendMessage(webhook, username, avatar, content2)
+	}
+}
+
+func sendMessage(webhook string, username string, avatar string, content string) {
+	message := discordwebhook.Message{
+		Username:  &username,
+		Content:   &content,
+		AvatarUrl: &avatar,
+	}
+
+	err := discordwebhook.SendMessage(webhook, message)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func getCal(icsUrl string) *ics.Calendar {
+	resp, err := http.Get(icsUrl)
 	if err != nil {
 		log.Fatal("Error fetching .ics file:", err)
 	}
@@ -52,78 +130,13 @@ func main() {
 		log.Fatal("Error parsing .ics data:", err)
 	}
 
-	// set the time location to Europe/Paris
-	location, err := time.LoadLocation("Europe/Paris")
-
-	today := time.Now().In(location)
-	tomorrow := today.AddDate(0, 0, 1)
-
-	var todayCourse []*ics.VEvent
-	var todayEvent []*ics.VEvent
-
-	var tomorrowCourse []*ics.VEvent
-	var tomorrowEvent []*ics.VEvent
-
-	// store the events of today and tomorrow
-	for _, event := range cal.Events() {
-		// Print the event as JSON
-		at, err := event.GetStartAt()
-		if err != nil {
-			return
-		}
-		if DateEqual(at, today) {
-			if event.GetProperty("CATEGORIES").Value == "Cours" {
-				todayCourse = append(todayCourse, event)
-			}
-
-			if event.GetProperty("CATEGORIES").Value == "Important" {
-				todayEvent = append(todayEvent, event)
-			}
-		}
-
-		if DateEqual(at, tomorrow) {
-			if event.GetProperty("CATEGORIES").Value == "Cours" {
-				tomorrowCourse = append(tomorrowCourse, event)
-			}
-
-			if event.GetProperty("CATEGORIES").Value == "Important" {
-				tomorrowEvent = append(tomorrowEvent, event)
-			}
-		}
-	}
-
-	//set the username and avatar of the bot
-	username := "📆 Planning Bot"
-	avatar := os.Getenv("AVATAR_URL")
-
-	if len(todayCourse) > 0 || len(todayEvent) > 0 {
-		content1 := getOrderedPlanning(todayCourse, todayEvent, "today")
-		sendMessage(webhook, username, avatar, content1)
-	}
-
-	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
-		content2 := getOrderedPlanning(tomorrowCourse, tomorrowEvent, "tomorrow")
-		sendMessage(webhook, username, avatar, content2)
-	}
-}
-
-func sendMessage(webhook string, username string, avatar string, content string) {
-	message := discordwebhook.Message{
-		Username:  &username,
-		Content:   &content,
-		AvatarUrl: &avatar,
-	}
-
-	err := discordwebhook.SendMessage(webhook, message)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return cal
 }
 
 func DateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()
-	return y1 == y2 && m1 == m2 && d1 == d2
+	return d1 == d2 && m1 == m2 && y1 == y2
 }
 
 func getOrderedPlanning(course, event []*ics.VEvent, day string) string {
@@ -142,7 +155,7 @@ func getOrderedPlanning(course, event []*ics.VEvent, day string) string {
 
 	location, err := time.LoadLocation("Europe/Paris")
 
-	content := "----------------------\n📅 " + strings.Title(day) + "'s planning !\n\n"
+	content := "# 📅 " + strings.Title(day) + "'s planning !\n\n"
 
 	firstCourse, err := course[0].GetStartAt()
 	if err != nil {
@@ -152,11 +165,11 @@ func getOrderedPlanning(course, event []*ics.VEvent, day string) string {
 	if err != nil {
 		return ""
 	}
-	content += "🔋 Start of " + day + " : **" + firstCourse.In(location).Format("15:04") + "**\n\n" +
-		"\U0001FAAB End of " + day + " : **" + endCourse.In(location).Format("15:04") + "**"
+	content += "## 🔋 Start of " + day + " : **" + firstCourse.In(location).Format("15:04") + "**\n\n" +
+		"## \U0001FAAB End of " + day + " : **" + endCourse.In(location).Format("15:04") + "**"
 
 	if len(event) > 0 {
-		content += "\n\n⚠️ **" + strconv.Itoa(len(event)) + "** important events " + day + " !"
+		content += "\n\n## ⚠️ **" + strconv.Itoa(len(event)) + "** important events " + day + " !"
 		for _, event := range event {
 			start, err := event.GetStartAt()
 			if err != nil {
@@ -170,7 +183,7 @@ func getOrderedPlanning(course, event []*ics.VEvent, day string) string {
 		}
 	}
 
-	content += "\n\n**" + strconv.Itoa(len(course)) + "** courses " + day + " !"
+	content += "\n\n### **" + strconv.Itoa(len(course)) + "** courses " + day + " !"
 
 	for _, event := range course {
 		start, err := event.GetStartAt()
