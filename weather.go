@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 	"unicode"
 )
 
@@ -45,10 +46,10 @@ func getWeather() string {
 		log.Fatal(err)
 	}
 
-	return parseWeather(forecast.Daily[0])
+	return parseWeather(forecast.Daily[0], forecast.Alerts)
 }
 
-func parseWeather(forecast owm.OneCallDailyData) string {
+func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData) string {
 	weatherType := forecast.Weather[0].Main
 	weatherEmoji := ""
 	switch weatherType {
@@ -82,6 +83,21 @@ func parseWeather(forecast owm.OneCallDailyData) string {
 	output += "\n🌡️ " + fmt.Sprintf("%.2f", forecast.Temp.Day) + "°C"
 	output += "\n🔺 " + fmt.Sprintf("%.2f", forecast.Temp.Max) + "°C"
 	output += "\n🔻 " + fmt.Sprintf("%.2f", forecast.Temp.Min) + "°C"
+
+	if len(alerts) > 0 {
+
+		location, err := time.LoadLocation("Europe/Paris")
+		if err != nil {
+			log.Fatalf("Error loading time")
+		}
+
+		for _, alert := range alerts {
+			output += "\n🚨 " + alert.Event
+			output += " from" + time.Unix(int64(alert.Start), 0).In(location).Format("15:04")
+			output += " to" + time.Unix(int64(alert.End), 0).In(location).Format("15:04")
+			output += " !"
+		}
+	}
 
 	return output
 }

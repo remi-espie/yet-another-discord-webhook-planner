@@ -35,6 +35,10 @@ func main() {
 	// set the time location to Europe/Paris
 	location, err := time.LoadLocation("Europe/Paris")
 
+	if err != nil {
+		log.Fatalf("Error loading time")
+	}
+
 	today := time.Now().In(location)
 	tomorrow := today.AddDate(0, 0, 1)
 
