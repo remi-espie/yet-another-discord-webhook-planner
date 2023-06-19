@@ -7,3 +7,5 @@ require (
 	github.com/gtuk/discordwebhook v1.1.0
 	github.com/joho/godotenv v1.5.1
 )
+
+require github.com/briandowns/openweathermap v0.19.0
