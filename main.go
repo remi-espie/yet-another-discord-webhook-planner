@@ -84,14 +84,13 @@ func main() {
 	}
 
 	if len(todayCourse) > 0 || len(todayEvent) > 0 {
-		content1 := "---\n"
-		content1 += getOrderedPlanning(todayCourse, todayEvent, "today")
+		content1 := getOrderedPlanning(todayCourse, todayEvent, "today")
 		content1 += "\n\n" + getWeather()
 		sendMessage(webhook, username, avatar, content1)
 	}
 
 	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
-		content2 := "---\n"
+		content2 := "# =-=-=-=-=-=-=-=-=-=-=-=-=\n"
 		content2 += getOrderedPlanning(tomorrowCourse, tomorrowEvent, "tomorrow")
 		sendMessage(webhook, username, avatar, content2)
 	}
