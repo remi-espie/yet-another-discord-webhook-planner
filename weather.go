@@ -36,6 +36,8 @@ func getWeather() string {
 		log.Fatal("Error converting latitude:", err)
 	}
 
+	location := os.Getenv("LOCATION")
+
 	coord := &owm.Coordinates{
 		Longitude: long,
 		Latitude:  lat,
@@ -46,10 +48,10 @@ func getWeather() string {
 		log.Fatal(err)
 	}
 
-	return parseWeather(forecast.Daily[0], forecast.Alerts)
+	return parseWeather(forecast.Daily[0], forecast.Alerts, location)
 }
 
-func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData) string {
+func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, location string) string {
 	weatherType := forecast.Weather[0].Main
 	weatherEmoji := ""
 	switch weatherType {
@@ -86,15 +88,15 @@ func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData) 
 
 	if len(alerts) > 0 {
 
-		location, err := time.LoadLocation("Europe/Paris")
+		location, err := time.LoadLocation(location)
 		if err != nil {
 			log.Fatalf("Error loading time")
 		}
 
 		for _, alert := range alerts {
 			output += "\n🚨 " + alert.Event
-			output += " from" + time.Unix(int64(alert.Start), 0).In(location).Format("15:04")
-			output += " to" + time.Unix(int64(alert.End), 0).In(location).Format("15:04")
+			output += " from " + time.Unix(int64(alert.Start), 0).In(location).Format("15:04")
+			output += " to " + time.Unix(int64(alert.End), 0).In(location).Format("15:04")
 			output += " !"
 		}
 	}
