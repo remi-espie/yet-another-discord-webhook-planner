@@ -83,24 +83,26 @@ func main() {
 
 	}
 
+	weather := getWeather()
+
+	var embeds []discordwebhook.Embed
+
 	if len(todayCourse) > 0 || len(todayEvent) > 0 {
-		content1 := getOrderedPlanning(todayCourse, todayEvent, "today")
-		content1 += "\n\n" + getWeather()
-		sendMessage(webhook, username, avatar, content1)
+		embeds = append(embeds, getEmbed(todayCourse, todayEvent, "today", weather[0]))
 	}
 
 	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
-		content2 := "# =-=-=-=-=-=-=-=-=-=-=-=-=\n"
-		content2 += getOrderedPlanning(tomorrowCourse, tomorrowEvent, "tomorrow")
-		sendMessage(webhook, username, avatar, content2)
+		embeds = append(embeds, getEmbed(tomorrowCourse, tomorrowEvent, "tomorrow", weather[1]))
 	}
+
+	sendMessage(webhook, username, avatar, embeds)
 }
 
-func sendMessage(webhook string, username string, avatar string, content string) {
+func sendMessage(webhook string, username string, avatar string, embed []discordwebhook.Embed) {
 	message := discordwebhook.Message{
 		Username:  &username,
-		Content:   &content,
 		AvatarUrl: &avatar,
+		Embeds:    &embed,
 	}
 
 	err := discordwebhook.SendMessage(webhook, message)
@@ -142,7 +144,7 @@ func DateEqual(date1, date2 time.Time) bool {
 	return d1 == d2 && m1 == m2 && y1 == y2
 }
 
-func getOrderedPlanning(course, event []*ics.VEvent, day string) string {
+func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Field) discordwebhook.Embed {
 
 	sort.Slice(course, func(i, j int) bool {
 		first, err := course[i].GetStartAt()
@@ -158,47 +160,112 @@ func getOrderedPlanning(course, event []*ics.VEvent, day string) string {
 
 	location, err := time.LoadLocation("Europe/Paris")
 
-	content := "# 📅 " + strings.Title(day) + "'s planning !\n\n"
+	title := "📅 " + strings.Title(day) + "'s planning !\n\n"
 
 	firstCourse, err := course[0].GetStartAt()
 	if err != nil {
-		return ""
+		return discordwebhook.Embed{}
 	}
 	endCourse, err := course[len(course)-1].GetEndAt()
 	if err != nil {
-		return ""
+		return discordwebhook.Embed{}
 	}
-	content += "## 🔋 Start of " + day + " : **" + firstCourse.In(location).Format("15:04") + "**\n\n" +
-		"## \U0001FAAB End of " + day + " : **" + endCourse.In(location).Format("15:04") + "**"
+	content := "🔋 Start of " + day + " : **" + firstCourse.In(location).Format("15:04") + "**\n\n" +
+		"\U0001FAAB End of " + day + " : **" + endCourse.In(location).Format("15:04") + "**"
+
+	titleField := discordwebhook.Field{
+		Name:   &title,
+		Value:  &content,
+		Inline: nil,
+	}
+
+	importantField := discordwebhook.Field{}
+	importantTitle := ""
 
 	if len(event) > 0 {
-		content += "\n\n## ⚠️ **" + strconv.Itoa(len(event)) + "** important events " + day + " !"
+		importantTitle = "⚠️ **" + strconv.Itoa(len(event)) + "** important events " + day + " !"
+		content = ""
 		for _, event := range event {
 			start, err := event.GetStartAt()
 			if err != nil {
-				return ""
+				return discordwebhook.Embed{}
 			}
 			end, err := event.GetEndAt()
 			if err != nil {
-				return ""
+				return discordwebhook.Embed{}
 			}
 			content += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
 		}
+
+		importantField = discordwebhook.Field{
+			Name:   &importantTitle,
+			Value:  &content,
+			Inline: nil,
+		}
 	}
 
-	content += "\n\n### **" + strconv.Itoa(len(course)) + "** courses " + day + " !"
+	courseTitle := "**" + strconv.Itoa(len(course)) + "** courses " + day + " !"
+	courseContent := ""
 
 	for _, event := range course {
 		start, err := event.GetStartAt()
 		if err != nil {
-			return ""
+			return discordwebhook.Embed{}
 		}
 		end, err := event.GetEndAt()
 		if err != nil {
-			return ""
+			return discordwebhook.Embed{}
 		}
-		content += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
+		courseContent = "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
 	}
 
-	return content
+	flag := true
+
+	thumbnail := ""
+
+	if day == "today" {
+		thumbnail = "https://calendar.cluster-2022-2.dopolytech.fr/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().Unix(), 10) + "&size=500"
+	} else {
+		thumbnail = "https://calendar.cluster-2022-2.dopolytech.fr/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().AddDate(0, 0, 1).Unix(), 10) + "&size=500"
+	}
+
+	thumbnailField := discordwebhook.Thumbnail{Url: &thumbnail}
+
+	courseField := discordwebhook.Field{
+		Name:   &courseTitle,
+		Value:  &courseContent,
+		Inline: &flag,
+	}
+
+	var fields []discordwebhook.Field
+
+	if importantField.Value != nil {
+		fields = []discordwebhook.Field{
+			titleField,
+			importantField,
+			courseField,
+			weather,
+		}
+	} else {
+		fields = []discordwebhook.Field{
+			titleField,
+			courseField,
+			weather,
+		}
+	}
+
+	footerText := "Made with ❤️ by @luckmk1 | " + time.Now().In(location).String()
+
+	footer := discordwebhook.Footer{
+		Text:    &footerText,
+		IconUrl: &thumbnail,
+	}
+
+	embed := discordwebhook.Embed{
+		Fields:    &fields,
+		Thumbnail: &thumbnailField,
+		Footer:    &footer,
+	}
+
+	return embed
 }

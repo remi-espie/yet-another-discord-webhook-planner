@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	owm "github.com/briandowns/openweathermap"
+	"github.com/gtuk/discordwebhook"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"unicode"
 )
 
-func getWeather() string {
+func getWeather() []discordwebhook.Field {
 
 	// load .env file
 	err := godotenv.Load(".env")
@@ -48,10 +49,13 @@ func getWeather() string {
 		log.Fatal(err)
 	}
 
-	return parseWeather(forecast.Daily[0], forecast.Alerts, location)
+	return []discordwebhook.Field{
+		parseWeather(forecast.Daily[0], forecast.Alerts, location),
+		parseWeather(forecast.Daily[1], forecast.Alerts, location),
+	}
 }
 
-func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, location string) string {
+func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, location string) discordwebhook.Field {
 	weatherType := forecast.Weather[0].Main
 	weatherEmoji := ""
 	switch weatherType {
@@ -81,10 +85,11 @@ func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, 
 	weatherDescription := []rune(forecast.Weather[0].Description)
 	weatherDescription[0] = unicode.ToUpper(weatherDescription[0])
 
-	output := "## 🛰️ Forecasted weather:\n" + weatherEmoji + " " + string(weatherDescription)
-	output += "\n🌡️ " + fmt.Sprintf("%.2f", forecast.Temp.Day) + "°C"
-	output += "\n🔺 " + fmt.Sprintf("%.2f", forecast.Temp.Max) + "°C"
-	output += "\n🔻 " + fmt.Sprintf("%.2f", forecast.Temp.Min) + "°C"
+	title := weatherEmoji + " " + string(weatherDescription)
+
+	content := "\n🌡️ " + fmt.Sprintf("%.2f", forecast.Temp.Day) + "°C"
+	content += "\n🔺 " + fmt.Sprintf("%.2f", forecast.Temp.Max) + "°C"
+	content += "\n🔻 " + fmt.Sprintf("%.2f", forecast.Temp.Min) + "°C"
 
 	if len(alerts) > 0 {
 
@@ -94,12 +99,20 @@ func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, 
 		}
 
 		for _, alert := range alerts {
-			output += "\n🚨 " + alert.Event
-			output += " from " + time.Unix(int64(alert.Start), 0).In(location).Format("15:04")
-			output += " to " + time.Unix(int64(alert.End), 0).In(location).Format("15:04")
-			output += " !"
+			content += "\n🚨 " + alert.Event
+			content += " from " + time.Unix(int64(alert.Start), 0).In(location).Format("15:04")
+			content += " to " + time.Unix(int64(alert.End), 0).In(location).Format("15:04")
+			content += " !"
 		}
 	}
 
-	return output
+	flag := true
+
+	field := discordwebhook.Field{
+		Name:   &title,
+		Value:  &content,
+		Inline: &flag,
+	}
+
+	return field
 }
