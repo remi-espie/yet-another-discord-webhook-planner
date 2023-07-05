@@ -1,4 +1,4 @@
-module discord-planner
+module yet-another-discord-webhook-planner
 
 go 1.19
 
