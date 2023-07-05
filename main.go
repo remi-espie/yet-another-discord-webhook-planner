@@ -216,7 +216,7 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 		if err != nil {
 			return discordwebhook.Embed{}
 		}
-		courseContent = "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
+		courseContent += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
 	}
 
 	flag := true
