@@ -186,8 +186,12 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 	importantTitle := ""
 
 	if len(event) > 0 {
-		importantTitle = "⚠️ **" + strconv.Itoa(len(event)) + "** important events " + day + " !"
-		content = ""
+		if len(event) > 1 {
+			importantTitle = "⚠️ **" + strconv.Itoa(len(event)) + "** important events " + day + " !"
+		} else {
+			importantTitle = "⚠️ **1** important event " + day + " !"
+		}
+		importantContent := ""
 		for _, event := range event {
 			start, err := event.GetStartAt()
 			if err != nil {
@@ -197,12 +201,12 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 			if err != nil {
 				return discordwebhook.Embed{}
 			}
-			content += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
+			importantContent += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
 		}
 
 		importantField = discordwebhook.Field{
 			Name:   &importantTitle,
-			Value:  &content,
+			Value:  &importantContent,
 			Inline: nil,
 		}
 	}
