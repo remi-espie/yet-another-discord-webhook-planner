@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func main() {
@@ -160,7 +161,9 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 
 	location, err := time.LoadLocation("Europe/Paris")
 
-	title := "📅 " + strings.Title(day) + "'s planning !\n\n"
+	dayTitle := []rune(day)
+	dayTitle[0] = unicode.ToUpper(dayTitle[0])
+	title := "📅 " + string(dayTitle) + "'s planning !"
 
 	firstCourse, err := course[0].GetStartAt()
 	if err != nil {
@@ -219,7 +222,7 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 		courseContent += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
 	}
 
-	flag := true
+	inline := true
 
 	thumbnail := ""
 
@@ -234,7 +237,7 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 	courseField := discordwebhook.Field{
 		Name:   &courseTitle,
 		Value:  &courseContent,
-		Inline: &flag,
+		Inline: &inline,
 	}
 
 	var fields []discordwebhook.Field
@@ -254,7 +257,7 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 		}
 	}
 
-	footerText := "Made with ❤️ by @luckmk1 | " + time.Now().In(location).String()
+	footerText := "Made with ❤️ by @luckmk1 | " + time.Now().In(location).Format("2006-01-02 15h04:05 Z0700 MST")
 
 	footer := discordwebhook.Footer{
 		Text:    &footerText,

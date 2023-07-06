@@ -106,12 +106,12 @@ func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, 
 		}
 	}
 
-	flag := true
+	inline := true
 
 	field := discordwebhook.Field{
 		Name:   &title,
 		Value:  &content,
-		Inline: &flag,
+		Inline: &inline,
 	}
 
 	return field
