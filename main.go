@@ -147,34 +147,43 @@ func DateEqual(date1, date2 time.Time) bool {
 
 func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Field) discordwebhook.Embed {
 
-	sort.Slice(course, func(i, j int) bool {
-		first, err := course[i].GetStartAt()
-		if err != nil {
-			return false
-		}
-		second, err := course[j].GetStartAt()
-		if err != nil {
-			return false
-		}
-		return first.Before(second)
-	})
-
 	location, err := time.LoadLocation("Europe/Paris")
+	if err != nil {
+		return discordwebhook.Embed{}
+	}
 
 	dayTitle := []rune(day)
 	dayTitle[0] = unicode.ToUpper(dayTitle[0])
 	title := "📅 " + string(dayTitle) + "'s planning !"
 
-	firstCourse, err := course[0].GetStartAt()
-	if err != nil {
-		return discordwebhook.Embed{}
+	content := "No courses today !"
+
+	if len(course) > 0 {
+
+		sort.Slice(course, func(i, j int) bool {
+			first, err := course[i].GetStartAt()
+			if err != nil {
+				return false
+			}
+			second, err := course[j].GetStartAt()
+			if err != nil {
+				return false
+			}
+			return first.Before(second)
+		})
+
+		firstCourse, err := course[0].GetStartAt()
+		if err != nil {
+			return discordwebhook.Embed{}
+		}
+		endCourse, err := course[len(course)-1].GetEndAt()
+		if err != nil {
+			return discordwebhook.Embed{}
+		}
+		content = "🔋 Start of " + day + " : **" + firstCourse.In(location).Format("15:04") + "**\n\n" +
+			"\U0001FAAB End of " + day + " : **" + endCourse.In(location).Format("15:04") + "**"
+
 	}
-	endCourse, err := course[len(course)-1].GetEndAt()
-	if err != nil {
-		return discordwebhook.Embed{}
-	}
-	content := "🔋 Start of " + day + " : **" + firstCourse.In(location).Format("15:04") + "**\n\n" +
-		"\U0001FAAB End of " + day + " : **" + endCourse.In(location).Format("15:04") + "**"
 
 	titleField := discordwebhook.Field{
 		Name:   &title,
@@ -231,9 +240,9 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 	thumbnail := ""
 
 	if day == "today" {
-		thumbnail = "https://calendar.cluster-2022-2.dopolytech.fr/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().Unix(), 10) + "&size=500"
+		thumbnail = "https://calengo.remi-espie.me/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().Unix(), 10) + "&size=500"
 	} else {
-		thumbnail = "https://calendar.cluster-2022-2.dopolytech.fr/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().AddDate(0, 0, 1).Unix(), 10) + "&size=500"
+		thumbnail = "https://calengo.remi-espie.me/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().AddDate(0, 0, 1).Unix(), 10) + "&size=500"
 	}
 
 	thumbnailField := discordwebhook.Thumbnail{Url: &thumbnail}
