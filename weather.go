@@ -12,7 +12,7 @@ import (
 	"unicode"
 )
 
-func getWeather() []discordwebhook.Field {
+func getWeather(weather chan []discordwebhook.Field) {
 
 	// load .env file
 	err := godotenv.Load(".env")
@@ -49,7 +49,7 @@ func getWeather() []discordwebhook.Field {
 		log.Fatal(err)
 	}
 
-	return []discordwebhook.Field{
+	weather <- []discordwebhook.Field{
 		parseWeather(forecast.Daily[0], forecast.Alerts, location),
 		parseWeather(forecast.Daily[1], forecast.Alerts, location),
 	}
