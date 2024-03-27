@@ -12,7 +12,7 @@ Moreover, it displays the events of today and tomorrow, but only if there are ev
 Besides, it displays a weather forecast for the day.  
 Else, it doesn't send a message.
 
-It uses a `.env` file which contains your personal data, see .env.example:
+It uses a `.env` file which contains your personal data, see [`.env.example`](.env.example):
 
 ## 🚀 Getting started
 
@@ -26,7 +26,7 @@ I personally used [Calendar.online](https://calendar.online/) as it is free, all
 
 ### Get a free OpenWeatherMap api key !
 
-The script also fetch the weather for the day from [OpenWeatherMap](https://openweathermap.org/). For it to work, you will have to add an api key to the .env file.  
+The script also fetch the weather for the day from [OpenWeatherMap](https://openweathermap.org/). For it to work, you will have to add an api key to the `.env` file.  
 To create an api key, you will need at least an OpenWeatherMap **free** account. Check [here](https://openweathermap.org/api).
 
 ### Get Go or see [releases](https://github.com/remi-espie/yet-another-discord-webhook-planner/releases)
