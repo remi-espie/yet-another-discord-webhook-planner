@@ -240,9 +240,9 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 	thumbnail := ""
 
 	if day == "today" {
-		thumbnail = "https://calengo.remi-espie.me/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().Unix(), 10) + "&size=500"
+		thumbnail = "https://calengo.espie.dev/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().Unix(), 10) + "&size=500"
 	} else {
-		thumbnail = "https://calengo.remi-espie.me/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().AddDate(0, 0, 1).Unix(), 10) + "&size=500"
+		thumbnail = "https://calengo.espie.dev/calendar?locale=" + location.String() + "&timestamp=" + strconv.FormatInt(time.Now().AddDate(0, 0, 1).Unix(), 10) + "&size=500"
 	}
 
 	thumbnailField := discordwebhook.Thumbnail{Url: &thumbnail}
