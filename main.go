@@ -100,7 +100,8 @@ func main() {
 	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
 		embeds = append(embeds, getEmbed(tomorrowCourse, tomorrowEvent, "tomorrow", weather[1]))
 	}
-	if sendMenu {
+
+	if sendMenu && crousRestaurantId != "" {
 		id, err := strconv.Atoi(crousRestaurantId)
 		if err != nil {
 			log.Fatalf("Error converting crousRestaurantId to integer")
