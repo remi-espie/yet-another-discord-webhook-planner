@@ -94,6 +94,8 @@ func getMenu(restaurantId int) []discordwebhook.Field {
 
 	var fields []discordwebhook.Field
 
+	inline := true
+
 	for _, foodie := range curatedMenu {
 		title := "🍽️ " + foodie.Type
 		content := ""
@@ -101,8 +103,9 @@ func getMenu(restaurantId int) []discordwebhook.Field {
 			content += food + "\n"
 		}
 		fields = append(fields, discordwebhook.Field{
-			Name:  &title,
-			Value: &content,
+			Name:   &title,
+			Value:  &content,
+			Inline: &inline,
 		})
 	}
 
