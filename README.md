@@ -14,6 +14,10 @@ Else, it doesn't send a message.
 
 It uses a `.env` file which contains your personal data, see [`.env.example`](.env.example):
 
+If you're a French student, you might be interested in getting the meal of the day in your favorite [CROUS restaurant](https://www.etudiant.gouv.fr/fr/vous-restaurer-1903).  
+Using [HackTheCrous](https://hackthecrous.com/)'s API, another message will be posted with the day's menu *if there are event on this day*.
+Just add the restaurant `ID` in the `.env` file for it to work automatically. 
+
 ## 🚀 Getting started
 
 ### Get a correct .ics !

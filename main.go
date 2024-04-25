@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,6 +33,10 @@ func main() {
 
 	// set the time location to Europe/Paris
 	location, err := time.LoadLocation("Europe/Paris")
+
+	// Prepare information for the CROUS meal
+	sendMenu := false
+	crousRestaurantId := os.Getenv("CROUS_RESTAURANT_ID")
 
 	if err != nil {
 		log.Fatalf("Error loading time")
@@ -89,10 +94,18 @@ func main() {
 
 	if len(todayCourse) > 0 || len(todayEvent) > 0 {
 		embeds = append(embeds, getEmbed(todayCourse, todayEvent, "today", weather[0]))
+		sendMenu = true
 	}
 
 	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
 		embeds = append(embeds, getEmbed(tomorrowCourse, tomorrowEvent, "tomorrow", weather[1]))
+	}
+	if sendMenu {
+		id, err := strconv.Atoi(crousRestaurantId)
+		if err != nil {
+			log.Fatalf("Error converting crousRestaurantId to integer")
+		}
+		embeds = append(embeds, getMenuEmbed(id))
 	}
 
 	sendMessage(webhook, username, avatar, embeds)
