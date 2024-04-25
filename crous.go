@@ -31,9 +31,20 @@ func getMenuEmbed(crousRestaurantId int) discordwebhook.Embed {
 		},
 	}
 
+	if content == nil {
+		noMenu := "No menu available for today!"
+		content = []discordwebhook.Field{
+			{
+				&noMenu,
+				&emptyString,
+				nil,
+			},
+		}
+	}
+
 	fields = append(fields, content...)
 
-	footerText := "Made with ❤️ by @luckmk1 thanks to HackTheCrous! | " + time.Now().In(location).Format("2006-01-02 15h04:05 Z0700 MST")
+	footerText := "Made with ❤️ by @luckmk1 featuring HackTheCrous! | " + time.Now().In(location).Format("2006-01-02 15h04:05 Z0700 MST")
 
 	footer := discordwebhook.Footer{
 		Text:    &footerText,
