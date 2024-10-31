@@ -9,6 +9,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/briandowns/openweathermap v0.19.0
 
 require github.com/hectormalot/omgo v0.1.3 // indirect
