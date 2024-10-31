@@ -24,10 +24,9 @@ This little script is made to work with specifics .ics file; it assumes that you
 
 I personally used [Calendar.online](https://calendar.online/) as it is free, allow to fetch multiple data sources and can be edited by anyone from a link without login.
 
-### Get a free OpenWeatherMap api key !
+### OpenMeteo
 
-The script also fetch the weather for the day from [OpenWeatherMap](https://openweathermap.org/). For it to work, you will have to add an api key to the `.env` file.  
-To create an api key, you will need at least an OpenWeatherMap **free** account. Check [here](https://openweathermap.org/api).
+The script also fetch the weather for the day and the following day from [OpenMeteo](https://open-meteo.com). As OpenMeteo is API-key free, it is not necessary to get one.
 
 ### Get Go or see [releases](https://github.com/remi-espie/yet-another-discord-webhook-planner/releases)
 
@@ -38,7 +37,6 @@ Then update the `.env` file with your own data:
 WEBHOOK_URL= # Your webhook URL
 ICS_URL= # Your .ics URL
 AVATAR_URL= # Your avatar URL
-OWM_KEY= # Your OpenWeatherMap api key
 LONGITUDE= # The longitude of where you'd like to know the weather
 LATITUDE= # The latitude of where you'd like to know the weather
 ```
@@ -61,4 +59,4 @@ And the following dependencies:
 - [goland-ical](https://github.com/arran4/golang-ical)
 - [Discord Webhook](https://github.com/gtuk/discordwebhook)
 - [GoDotEnv](https://github.com/joho/godotenv)
-- [OpenWeatherMap Go API](https://github.com/briandowns/openweathermap)
+- [Open-Meteo-Go](https://github.com/hectormalot/omgo)
