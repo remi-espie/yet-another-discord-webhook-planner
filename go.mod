@@ -10,3 +10,5 @@ require (
 )
 
 require github.com/briandowns/openweathermap v0.19.0
+
+require github.com/hectormalot/omgo v0.1.3 // indirect

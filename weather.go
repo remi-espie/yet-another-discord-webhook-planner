@@ -1,15 +1,15 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	owm "github.com/briandowns/openweathermap"
 	"github.com/gtuk/discordwebhook"
+	"github.com/hectormalot/omgo"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"strconv"
-	"time"
-	"unicode"
 )
 
 func getWeather(weather chan []discordwebhook.Field) {
@@ -18,13 +18,6 @@ func getWeather(weather chan []discordwebhook.Field) {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
-	}
-
-	apiKey := os.Getenv("OWM_KEY")
-
-	forecast, err := owm.NewOneCall("C", "EN", apiKey, []string{owm.ExcludeHourly, owm.ExcludeCurrent})
-	if err != nil {
-		log.Fatal("Error get api data:", err)
 	}
 
 	long, err := strconv.ParseFloat(os.Getenv("LONGITUDE"), 64)
@@ -39,72 +32,83 @@ func getWeather(weather chan []discordwebhook.Field) {
 
 	location := os.Getenv("LOCATION")
 
-	coord := &owm.Coordinates{
-		Longitude: long,
-		Latitude:  lat,
+	weatherDescriptions := map[int]string{}
+
+	// Read the JSON file
+	file, err := os.ReadFile("weather_description.json")
+	if err != nil {
+		log.Fatalf("Error reading JSON file: %v", err)
 	}
 
-	err = forecast.OneCallByCoordinates(coord)
+	// Unmarshal the JSON data into the map
+	err = json.Unmarshal(file, &weatherDescriptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error unmarshalling JSON data: %v", err)
+	}
+
+	c, err := omgo.NewClient()
+	if err != nil {
+		log.Fatalf("Error creating OpenMeteo client: %v", err)
+	}
+
+	loc, err := omgo.NewLocation(lat, long)
+	if err != nil {
+		log.Fatalf("Error creating location: %v", err)
+	}
+
+	println(location)
+
+	opts := omgo.Options{
+		Timezone:     location,
+		DailyMetrics: []string{"temperature_2m_max", "temperature_2m_min", "weathercode"},
+	}
+
+	res, err := c.Forecast(context.Background(), loc, &opts)
+	if err != nil {
+		log.Fatalf("Error getting forecast: %v", err)
 	}
 
 	weather <- []discordwebhook.Field{
-		parseWeather(forecast.Daily[0], forecast.Alerts, location),
-		parseWeather(forecast.Daily[1], forecast.Alerts, location),
+		parseWeather(res, 0, location, weatherDescriptions),
+		parseWeather(res, 1, location, weatherDescriptions),
 	}
 }
 
-func parseWeather(forecast owm.OneCallDailyData, alerts []owm.OneCallAlertData, location string) discordwebhook.Field {
-	weatherType := forecast.Weather[0].Main
+func parseWeather(forecast *omgo.Forecast, day int, location string, weatherDesc map[int]string) discordwebhook.Field {
+	weatherType := int(forecast.DailyMetrics["weathercode"][day])
 	weatherEmoji := ""
 	switch weatherType {
-	case "Clear":
+	case 0, 1:
 		weatherEmoji = "☀️"
 		break
-	case "Clouds":
+	case 2, 3:
 		weatherEmoji = "☁️"
 		break
-	case "Mist":
+	case 45, 48:
 		weatherEmoji = "🌁"
 		break
-	case "Snow":
+	case 51, 53, 55, 56, 57, 61, 63, 65, 66, 67:
+		weatherEmoji = "🌧️"
+		break
+	case 71, 73, 75, 77, 85, 86:
 		weatherEmoji = "❄️"
 		break
-	case "Rain":
-		weatherEmoji = "🌧️"
-		break
-	case "Drizzle":
-		weatherEmoji = "🌧️"
-		break
-	case "Thunderstorm":
+	case 98, 96, 99:
 		weatherEmoji = "⛈️"
 		break
 	}
 
-	weatherDescription := []rune(forecast.Weather[0].Description)
-	weatherDescription[0] = unicode.ToUpper(weatherDescription[0])
+	weatherDescription := weatherDesc[weatherType]
 
-	title := weatherEmoji + " " + string(weatherDescription)
+	title := weatherEmoji + " " + weatherDescription
 
-	content := "\n🌡️ " + fmt.Sprintf("%.2f", forecast.Temp.Day) + "°C"
-	content += "\n🔺 " + fmt.Sprintf("%.2f", forecast.Temp.Max) + "°C"
-	content += "\n🔻 " + fmt.Sprintf("%.2f", forecast.Temp.Min) + "°C"
+	maxTemp := forecast.DailyMetrics["temperature_2m_max"][day]
+	minTemp := forecast.DailyMetrics["temperature_2m_min"][day]
+	averageTemp := (maxTemp + minTemp) / 2
 
-	if len(alerts) > 0 {
-
-		location, err := time.LoadLocation(location)
-		if err != nil {
-			log.Fatalf("Error loading time")
-		}
-
-		for _, alert := range alerts {
-			content += "\n🚨 " + alert.Event
-			content += " from " + time.Unix(int64(alert.Start), 0).In(location).Format("15:04")
-			content += " to " + time.Unix(int64(alert.End), 0).In(location).Format("15:04")
-			content += " !"
-		}
-	}
+	content := "\n🌡️ " + fmt.Sprintf("%.2f", averageTemp) + "°C"
+	content += "\n🔺 " + fmt.Sprintf("%.2f", maxTemp) + "°C"
+	content += "\n🔻 " + fmt.Sprintf("%.2f", minTemp) + "°C"
 
 	inline := true
 
