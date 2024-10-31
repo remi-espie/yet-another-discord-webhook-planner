@@ -30,8 +30,6 @@ func getWeather(weather chan []discordwebhook.Field) {
 		log.Fatal("Error converting latitude:", err)
 	}
 
-	location := os.Getenv("LOCATION")
-
 	weatherDescriptions := map[int]string{}
 
 	// Read the JSON file
@@ -56,10 +54,7 @@ func getWeather(weather chan []discordwebhook.Field) {
 		log.Fatalf("Error creating location: %v", err)
 	}
 
-	println(location)
-
 	opts := omgo.Options{
-		Timezone:     location,
 		DailyMetrics: []string{"temperature_2m_max", "temperature_2m_min", "weathercode"},
 	}
 
@@ -69,12 +64,12 @@ func getWeather(weather chan []discordwebhook.Field) {
 	}
 
 	weather <- []discordwebhook.Field{
-		parseWeather(res, 0, location, weatherDescriptions),
-		parseWeather(res, 1, location, weatherDescriptions),
+		parseWeather(res, 0, weatherDescriptions),
+		parseWeather(res, 1, weatherDescriptions),
 	}
 }
 
-func parseWeather(forecast *omgo.Forecast, day int, location string, weatherDesc map[int]string) discordwebhook.Field {
+func parseWeather(forecast *omgo.Forecast, day int, weatherDesc map[int]string) discordwebhook.Field {
 	weatherType := int(forecast.DailyMetrics["weathercode"][day])
 	weatherEmoji := ""
 	switch weatherType {
