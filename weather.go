@@ -7,27 +7,32 @@ import (
 	"github.com/gtuk/discordwebhook"
 	"github.com/hectormalot/omgo"
 	"github.com/joho/godotenv"
-	"log"
 	"os"
 	"strconv"
 )
 
-func getWeather(weather chan []discordwebhook.Field) {
+func getWeather(weather chan []discordwebhook.Field, e chan error) {
 
 	// load .env file
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+		e <- fmt.Errorf("Error loading .env file: %v", err)
+		weather <- nil
+		return
 	}
 
 	long, err := strconv.ParseFloat(os.Getenv("LONGITUDE"), 64)
 	if err != nil {
-		log.Fatal("Error converting longitude:", err)
+		e <- fmt.Errorf("Error converting longitude:  %v", err)
+		weather <- nil
+		return
 	}
 
 	lat, err := strconv.ParseFloat(os.Getenv("LATITUDE"), 64)
 	if err != nil {
-		log.Fatal("Error converting latitude:", err)
+		e <- fmt.Errorf("Error converting latitude: %v", err)
+		weather <- nil
+		return
 	}
 
 	weatherDescriptions := map[int]string{}
@@ -35,23 +40,31 @@ func getWeather(weather chan []discordwebhook.Field) {
 	// Read the JSON file
 	file, err := os.ReadFile("weather_description.json")
 	if err != nil {
-		log.Fatalf("Error reading JSON file: %v", err)
+		e <- fmt.Errorf("Error reading JSON file: %v", err)
+		weather <- nil
+		return
 	}
 
 	// Unmarshal the JSON data into the map
 	err = json.Unmarshal(file, &weatherDescriptions)
 	if err != nil {
-		log.Fatalf("Error unmarshalling JSON data: %v", err)
+		e <- fmt.Errorf("Error unmarshalling JSON data: %v", err)
+		weather <- nil
+		return
 	}
 
 	c, err := omgo.NewClient()
 	if err != nil {
-		log.Fatalf("Error creating OpenMeteo client: %v", err)
+		e <- fmt.Errorf("Error creating OpenMeteo client: %v", err)
+		weather <- nil
+		return
 	}
 
 	loc, err := omgo.NewLocation(lat, long)
 	if err != nil {
-		log.Fatalf("Error creating location: %v", err)
+		e <- fmt.Errorf("Error creating location: %v", err)
+		weather <- nil
+		return
 	}
 
 	opts := omgo.Options{
@@ -60,13 +73,16 @@ func getWeather(weather chan []discordwebhook.Field) {
 
 	res, err := c.Forecast(context.Background(), loc, &opts)
 	if err != nil {
-		log.Fatalf("Error getting forecast: %v", err)
+		e <- fmt.Errorf("Error getting forecast: %v", err)
+		weather <- nil
+		return
 	}
 
 	weather <- []discordwebhook.Field{
 		parseWeather(res, 0, weatherDescriptions),
 		parseWeather(res, 1, weatherDescriptions),
 	}
+	e <- nil
 }
 
 func parseWeather(forecast *omgo.Forecast, day int, weatherDesc map[int]string) discordwebhook.Field {

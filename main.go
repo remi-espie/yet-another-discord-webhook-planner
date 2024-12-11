@@ -47,8 +47,9 @@ func main() {
 	var tomorrowEvent []*ics.VEvent
 
 	weatherChan := make(chan []discordwebhook.Field)
+	weatherError := make(chan error)
 
-	go getWeather(weatherChan)
+	go getWeather(weatherChan, weatherError)
 
 	// Fetch the calendar
 	cal := getCal(icsUrl)
@@ -86,13 +87,25 @@ func main() {
 
 	var embeds []discordwebhook.Embed
 	weather := <-weatherChan
+	weatherE := <-weatherError
 
-	if len(todayCourse) > 0 || len(todayEvent) > 0 {
-		embeds = append(embeds, getEmbed(todayCourse, todayEvent, "today", weather[0]))
-	}
+	if weatherE != nil {
+		log.Println(weatherE)
+		if len(todayCourse) > 0 || len(todayEvent) > 0 {
+			embeds = append(embeds, getEmbed(todayCourse, todayEvent, "today", nil))
+		}
 
-	if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
-		embeds = append(embeds, getEmbed(tomorrowCourse, tomorrowEvent, "tomorrow", weather[1]))
+		if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
+			embeds = append(embeds, getEmbed(tomorrowCourse, tomorrowEvent, "tomorrow", nil))
+		}
+	} else {
+		if len(todayCourse) > 0 || len(todayEvent) > 0 {
+			embeds = append(embeds, getEmbed(todayCourse, todayEvent, "today", &weather[0]))
+		}
+
+		if len(tomorrowCourse) > 0 || len(tomorrowEvent) > 0 {
+			embeds = append(embeds, getEmbed(tomorrowCourse, tomorrowEvent, "tomorrow", &weather[1]))
+		}
 	}
 
 	sendMessage(webhook, username, avatar, embeds)

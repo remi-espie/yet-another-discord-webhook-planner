@@ -9,7 +9,7 @@ import (
 	"unicode"
 )
 
-func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Field) discordwebhook.Embed {
+func getEmbed(course, event []*ics.VEvent, day string, weather *discordwebhook.Field) discordwebhook.Embed {
 
 	location, err := time.LoadLocation("Europe/Paris")
 	if err != nil {
@@ -94,7 +94,12 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 		if err != nil {
 			return discordwebhook.Embed{}
 		}
-		courseContent += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
+		// add location if available
+		if event.GetProperty("LOCATION") != nil {
+			courseContent += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value + " | " + event.GetProperty("LOCATION").Value
+		} else {
+			courseContent += "\n**" + start.In(location).Format("15:04") + "** → **" + end.In(location).Format("15:04") + "** : " + event.GetProperty("SUMMARY").Value
+		}
 	}
 
 	inline := true
@@ -117,21 +122,18 @@ func getEmbed(course, event []*ics.VEvent, day string, weather discordwebhook.Fi
 		Inline: &inline,
 	}
 
-	var fields []discordwebhook.Field
+	fields := []discordwebhook.Field{
+		titleField,
+	}
 
 	if importantField.Value != nil {
-		fields = []discordwebhook.Field{
-			titleField,
-			importantField,
-			courseField,
-			weather,
-		}
-	} else {
-		fields = []discordwebhook.Field{
-			titleField,
-			courseField,
-			weather,
-		}
+		fields = append(fields, importantField)
+	}
+
+	fields = append(fields, courseField)
+
+	if weather != nil {
+		fields = append(fields, *weather)
 	}
 
 	footerText := "Made with ❤️ by @luckmk1 | " + time.Now().In(location).Format("2006-01-02 15h04:05 Z0700 MST")
